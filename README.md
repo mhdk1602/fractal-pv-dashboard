@@ -26,7 +26,7 @@
 
 ## What the dashboard shows
 
-Price volatility and trading volume both have long-range memory (Hurst exponent `H > 0.5`). This dashboard lets you walk through how the two persistence structures co-move through time for each of 50 S&P 500 equities, and what that co-movement says about future liquidity.
+Price volatility and trading volume both have long-range memory (Hurst exponent `H > 0.5`). This dashboard lets you walk through how the two persistence structures co-move through time for each of 50 S&P 500 equities, and what that co-movement does (and does not) say about future liquidity.
 
 Three lenses, all interactive:
 
@@ -44,8 +44,8 @@ The dashboard is the inspection surface for these published findings:
 |---|---:|---|
 | Temporal coupling is strong and positive | mean `r = 0.665` across 49/50 equities | time series view |
 | Static coupling is null | cross-sectional `r = -0.02` | coupling view |
-| CII predicts illiquidity | two-way clustered `t = 2.90`, `p = 0.004` | predictive view |
-| CII does not predict realized volatility | clustered `t = 0.84` | predictive view |
+| CII has no firm-conditional forecast power for illiquidity (earlier `t = 2.90` was a share-volume Amihud artifact; dollar-volume is null) | two-way clustered `t ≈ 0`, `p > 0.3` | predictive view |
+| CII does not predict realized volatility either | two-way clustered, not significant | predictive view |
 | Crisis amplification | coupling roughly doubles during COVID-19 | time series view, regime overlay |
 
 Sources: companion repository [`fractal-pv-coupling`](https://github.com/mhdk1602/fractal-pv-coupling) and the working paper at [DOI 10.5281/zenodo.19611544](https://doi.org/10.5281/zenodo.19611544).
@@ -57,7 +57,7 @@ flowchart LR
     R["Daily OHLCV<br/>(Yahoo Finance, 50 tickers)"] --> A["Aligned rolling windows<br/>W = 500, &#916; = 20"]
     A --> H1["H_v(t) DFA<br/>on |returns|"]
     A --> H2["H_q(t) DFA<br/>on volume"]
-    H1 --> C["CII(t) = (H_v + H_q) / 2"]
+    H1 --> C["CII(t) = trailing corr(H_v, H_q)"]
     H2 --> C
     H1 --> P["Per-ticker<br/>r(H_v, H_q)"]
     H2 --> P
