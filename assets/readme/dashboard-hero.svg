@@ -68,8 +68,8 @@
       <g transform="translate(196 0)">
         <rect width="180" height="84" rx="14" fill="url(#card)" stroke="#2c4760" filter="url(#shadow)"/>
         <text class="micro" x="18" y="26">CII vs ILLIQUIDITY</text>
-        <text class="metric" x="18" y="58">t = 2.90</text>
-        <text class="unit" x="18" y="76">p = 0.004 (2-way clustered)</text>
+        <text class="metric" x="18" y="58">null</text>
+        <text class="unit" x="18" y="76">t = &#8722;0.93 (488 firms)</text>
       </g>
       <g transform="translate(392 0)">
         <rect width="180" height="84" rx="14" fill="url(#card)" stroke="#2c4760" filter="url(#shadow)"/>

@@ -75,7 +75,8 @@ def compute_forward_metrics(
         realized_vol: sqrt(sum(r^2)) over [t+1, t+horizon]
         abnormal_turnover: mean(volume / trailing_60d_mean_volume) over [t+1, t+horizon]
         max_drawdown: max peak-to-trough loss in [t+1, t+horizon]
-        amihud_illiq: mean(|r| / volume) over [t+1, t+horizon]
+        amihud_illiq: mean(|r| / (volume * price)) over [t+1, t+horizon],
+            scaled by 1e6, following Amihud (2002).
     """
     prices = prices.dropna().sort_index()
     volume = volume.dropna().sort_index()
@@ -118,11 +119,14 @@ def compute_forward_metrics(
         drawdowns = (cum_ret - running_max) / running_max
         max_dd = float(drawdowns.min())
 
-        # Amihud illiquidity
+        # Amihud (2002) illiquidity: |r_t| / (V_t * P_t), scaled by 1e6 per
+        # the original convention. A share-volume denominator equals this
+        # measure times the contemporaneous price level, which is a
+        # price-level confound rather than a liquidity signal.
         abs_ret = np.abs(fwd_returns.values).astype(float)
-        vol_safe = fwd_volume.values.astype(float).copy()
-        vol_safe[vol_safe == 0] = np.nan
-        amihud = np.nanmean(abs_ret / vol_safe) * 1e9  # scale for readability
+        dollar_vol = (fwd_volume.values * fwd_prices.values).astype(float).copy()
+        dollar_vol[dollar_vol == 0] = np.nan
+        amihud = np.nanmean(abs_ret / dollar_vol) * 1e6
 
         results.append({
             "date": t,
@@ -256,9 +260,10 @@ def run_predictive_regression(
     sigma2 = np.sum(resid ** 2) / (n - k)
     bread = np.linalg.inv(X.T @ X)
 
-    # HC1 robust
-    u2 = resid ** 2
-    meat = X.T @ np.diag(u2) @ X
+    # HC1 robust, weighted-X form per MacKinnon & White (1985).
+    # Equivalent to X' diag(u²) X but O(nk) memory rather than O(n²).
+    Xw = X * np.abs(resid)[:, None]
+    meat = Xw.T @ Xw
     V_hc1 = (n / (n - k)) * bread @ meat @ bread
     se_robust = np.sqrt(np.diag(V_hc1))
 

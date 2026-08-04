@@ -3,9 +3,11 @@
 Visualize Hurst exponents, rolling fractal dynamics, temporal coupling,
 regime analysis, and liquidity prediction for any stock ticker.
 
-Research: Temporal coupling between H(|returns|) and H(volume) is strong
-within individual stocks (mean r=0.665) yet absent cross-sectionally (r=-0.02).
-The Coupling Intensity Index (CII) predicts future Amihud illiquidity.
+Temporal coupling between H(|returns|) and H(volume) is strong within
+individual stocks (mean r=0.665 on the 50-stock sample, r=0.531 across the
+488-firm panel) yet absent cross-sectionally (r=-0.02). The Coupling
+Intensity Index (CII) does not forecast forward Amihud illiquidity once the
+denominator uses dollar volume, which is the Amihud (2002) convention.
 """
 
 import sys
@@ -50,14 +52,23 @@ COLORS = {
 
 PLOTLY_TEMPLATE = "plotly_dark"
 
-# Pre-computed research findings (from 50-stock universe analysis)
+# Pre-computed research findings. The 50-stock entries come from the
+# exploratory universe, the _g488 entries from the confirmatory panel.
+# Source of truth is the companion paper, not this dict.
 RESEARCH = {
     "mean_coupling": 0.665,
     "pct_positive": 98,  # 49/50
     "n_stocks": 50,
     "cross_sectional_r": -0.02,
-    "cii_amihud_t": 2.90,
-    "cii_amihud_p": 0.004,
+    # Dollar-volume Amihud (Amihud 2002), two-way clustered. The earlier
+    # t = 2.90 came from a share-volume denominator and is retracted.
+    "cii_amihud_t": 0.33,
+    "cii_amihud_p": 0.745,
+    "cii_amihud_t_g488": -0.93,
+    "cii_amihud_p_g488": 0.356,
+    "mean_coupling_g488": 0.531,
+    "pct_positive_g488": 92.7,
+    "n_stocks_g488": 488,
     "cii_vol_t": 0.84,
     "covid_normal_r": 0.41,
     "covid_crisis_r": 0.77,
@@ -172,15 +183,22 @@ This dashboard accompanies a working paper investigating the relationship
 between Hurst exponents of absolute returns and trading volume across
 S&P 500 constituents.
 
-**Key finding**: Within-stock temporal coupling is strong (mean r = 0.665,
-49/50 stocks positive) while cross-sectional coupling is null (r = -0.02).
-This paradox suggests that coupling arises from shared information arrival
-dynamics rather than firm-level characteristics.
+**Key finding.** Within-stock temporal coupling is strong (mean r = 0.665,
+49/50 stocks positive; r = 0.531 with 92.7% positive across the 488-firm
+panel, present in all eleven GICS sectors) while cross-sectional coupling is
+null (r = -0.02). This paradox suggests that coupling arises from shared
+information arrival dynamics rather than firm-level characteristics.
 
-The Coupling Intensity Index (CII) predicts future Amihud illiquidity
-(two-way clustered t = 2.90, p = 0.004).
+The Coupling Intensity Index (CII) does **not** forecast forward Amihud
+illiquidity. An earlier version of this dashboard reported t = 2.90,
+p = 0.004, which came from a share-volume Amihud denominator. That quantity
+equals the correct dollar-volume Amihud times the contemporaneous price, so
+it carried a price-level confound. Under the standard Amihud (2002)
+dollar-volume convention with two-way clustering the coefficient is null,
+t = 0.33 (p = 0.745) on the 50-stock sample and t = -0.93 (p = 0.356) on
+the 488-firm panel.
 
-**Source**: [GitHub](https://github.com/mhdk1602/Matlab---fractal-modelling)
+**Source**  [GitHub](https://github.com/mhdk1602/Matlab---fractal-modelling)
         """)
 
     st.markdown("---")
@@ -338,8 +356,10 @@ tab_findings, tab_price, tab_rolling, tab_coupling, tab_predict, tab_regime, tab
 with tab_findings:
     st.markdown("### Research Headlines")
     st.markdown(
-        "These results are from the full 50-stock S&P 500 sample analysis. "
-        "Use the other tabs to explore individual tickers interactively."
+        "The top row reports the 50-stock exploratory sample. The second row "
+        "carries the 488-firm confirmatory panel and the regime result. Each "
+        "tile names its own universe. Use the other tabs to explore "
+        "individual tickers interactively."
     )
 
     # Row 1: The paradox
@@ -373,24 +393,39 @@ with tab_findings:
     with c4:
         st.markdown(f"""
         <div class="finding-card">
-            <div class="finding-number" style="color: {COLORS['accent']};">t = 2.90</div>
-            <div class="finding-label">CII predicts Amihud illiquidity<br>Two-way clustered, p = 0.004</div>
+            <div class="finding-number" style="color: {COLORS['positive']};">r = 0.531</div>
+            <div class="finding-label">Mean within-firm coupling, 488 firms<br>92.7% positive, all eleven GICS sectors</div>
         </div>
         """, unsafe_allow_html=True)
     with c5:
         st.markdown(f"""
         <div class="finding-card">
-            <div class="finding-number" style="color: {COLORS['neutral']};">t = 0.84</div>
-            <div class="finding-label">CII does NOT predict realized vol<br>Honest null after robust clustering</div>
+            <div class="finding-number" style="color: {COLORS['neutral']};">t = &minus;0.93</div>
+            <div class="finding-label">CII does NOT predict Amihud illiquidity<br>Two-way clustered p = 0.356, 488 firms</div>
         </div>
         """, unsafe_allow_html=True)
     with c6:
         st.markdown(f"""
         <div class="finding-card">
             <div class="finding-number" style="color: {COLORS['price']};">0.41 &rarr; 0.77</div>
-            <div class="finding-label">Coupling during COVID crisis<br>Nearly doubles vs. normal periods</div>
+            <div class="finding-label">Coupling during COVID crisis, 50 stocks<br>Nearly doubles vs. normal periods</div>
         </div>
         """, unsafe_allow_html=True)
+
+    st.warning(
+        "**Correction.** An earlier version of this dashboard headlined "
+        "t = 2.90, p = 0.004 for CII predicting forward Amihud illiquidity. "
+        "That regression used a share-volume denominator, which equals the "
+        "correct dollar-volume Amihud multiplied by the contemporaneous "
+        "price level, so the result was a price-level confound. Under the "
+        "standard Amihud (2002) dollar-volume convention with two-way "
+        "clustering the coefficient is null, t = 0.33 (p = 0.745) on the "
+        "50-stock sample and t = -0.93 (p = 0.356) on the 488-firm panel. "
+        "The null is precise rather than underpowered. On the 51-firm "
+        "panel the standardized effect is +0.018 target-SD per CII-SD with "
+        "a 95% CI of [-0.062, +0.099], which excludes any effect larger "
+        "than 0.10 SD."
+    )
 
     st.markdown("---")
 
@@ -707,8 +742,12 @@ with tab_predict:
     st.markdown("### CII and Forward Liquidity Metrics")
     st.markdown(
         "The Coupling Intensity Index (CII) measures trailing correlation between "
-        "rolling H(|returns|) and H(volume). The research shows CII significantly predicts "
-        "future Amihud illiquidity (t = 2.90, p = 0.004) but not realized volatility (t = 0.84)."
+        "rolling H(|returns|) and H(volume). CII forecasts neither forward Amihud "
+        "illiquidity (two-way clustered t = 0.33, p = 0.745 on 50 stocks; t = -0.93, "
+        "p = 0.356 on 488 firms) nor realized volatility (t = 0.84). Amihud is "
+        "computed on the dollar-volume denominator of Amihud (2002). The share-volume "
+        "variant used in an earlier version of this dashboard is a price-level "
+        "confound and its t = 2.90 headline is retracted."
     )
 
     if dual_df.empty:
@@ -821,10 +860,11 @@ with tab_predict:
                                 st.plotly_chart(fig_rv, use_container_width=True)
 
                             st.markdown(
-                                "In the full panel regression (50 stocks), CII significantly predicts "
-                                "Amihud illiquidity (two-way clustered t = 2.90, p = 0.004) but does "
-                                "not predict realized volatility (t = 0.84). Single-ticker scatter above "
-                                "may differ from the panel result."
+                                "In the full panel regression (50 stocks), CII predicts neither "
+                                "dollar-volume Amihud illiquidity (two-way clustered t = 0.33, "
+                                "p = 0.745) nor realized volatility (t = 0.84). The 488-firm panel "
+                                "reproduces the illiquidity null at t = -0.93, p = 0.356. "
+                                "Single-ticker scatter above may differ from the panel result."
                             )
                         else:
                             st.info("Not enough overlapping CII and forward metric observations for scatter plots.")
@@ -838,9 +878,12 @@ with tab_predict:
     st.markdown("---")
     st.markdown("#### Panel Regression Results (50-Stock Universe)")
     panel_results = pd.DataFrame([
-        {"Target": "Amihud Illiquidity", "CII Beta": "positive", "HC1 t": 5.12,
-         "Firm-Clustered t": 3.45, "Two-Way Clustered t": 2.90, "p-value": 0.004,
-         "Verdict": "Significant"},
+        {"Target": "Amihud Illiquidity (dollar volume)", "CII Beta": "~0", "HC1 t": 1.16,
+         "Firm-Clustered t": 0.41, "Two-Way Clustered t": 0.33, "p-value": 0.745,
+         "Verdict": "NOT significant"},
+        {"Target": "Amihud Illiquidity (share volume, retracted)", "CII Beta": "positive",
+         "HC1 t": 9.67, "Firm-Clustered t": 3.50, "Two-Way Clustered t": 2.90,
+         "p-value": 0.004, "Verdict": "Retracted"},
         {"Target": "Realized Volatility", "CII Beta": "positive", "HC1 t": 3.81,
          "Firm-Clustered t": 1.92, "Two-Way Clustered t": 0.84, "p-value": 0.401,
          "Verdict": "NOT significant"},
@@ -852,10 +895,11 @@ with tab_predict:
          "Verdict": "Marginal"},
     ])
     st.dataframe(
-        panel_results.style.applymap(
+        panel_results.style.map(
             lambda v: "color: #00d4aa" if v == "Significant"
             else "color: #ff6b6b" if v == "NOT significant"
             else "color: #ffd93d" if v == "Marginal"
+            else "color: #8892b0; text-decoration: line-through" if v == "Retracted"
             else "",
             subset=["Verdict"]
         ),
@@ -864,8 +908,13 @@ with tab_predict:
     )
     st.caption(
         "HC1 standard errors dramatically overstate significance. Two-way clustering "
-        "(firm + time) is the correct inference for overlapping panels. Only Amihud "
-        "illiquidity survives robust inference."
+        "(firm + time) is the correct inference for overlapping panels. No target "
+        "survives it at the 5% level. The two Amihud rows are the same regression "
+        "run against two "
+        "denominators, and the gap between them is the price-level confound. Share "
+        "volume gives |r| / V, dollar volume gives |r| / (V * P), so the share-volume "
+        "measure is the correct one scaled by the price level. The retracted row is "
+        "kept visible on purpose."
     )
 
 
